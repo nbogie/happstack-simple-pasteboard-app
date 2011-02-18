@@ -147,14 +147,25 @@ succeeds, happstack will generate a generic 404 response:
 > pasteApp :: (IConnection a) => a -> ServerPart Response
 > pasteApp db = msum
 >     [ methodOnly GET  >> nullDir >> showPasteForm
->     , methodOnly POST >> nullDir >> withData (addPaste db)
+>     , methodOnly POST >> nullDir >> decodeBody postBodyPolicy >> withData (addPaste db)
 >     , methodOnly GET  >> path (showPaste db) ]
-
+ 
 The routing is handled using guards and combinators. `methodOnly GET`
 is a `ServerPart` that succeeds if the request method is GET and fails
 otherwise. `nullDir` succeeds if the URL path is empty (that is, the
 request was for '/') and fails otherwise.  `withData` and `path` will
 be discussed below.
+
+In happstack 6, we need to explicitly decode the body for the 
+POST request.  Here's the BodyPolicy we've referred to in the above:
+
+> postBodyPolicy = defaultBodyPolicy "/tmp/" 0 10000 1000
+
+If I'm reading [the docs](http://hackage.haskell.org/packages/archive/happstack-server/latest/doc/html/Happstack-Server-RqData.html#v:defaultBodyPolicy)
+right, that’s specifying an uploads dir of /tmp/, 
+allowing 0k for file uploads, 10k for data and 1k for headers.
+
+[Read more on decodeBody](http://happstack.com/docs/crashcourse/RqData.html#whyDecodeBody)
 
 Displaying the paste input form
 -------------------------------
